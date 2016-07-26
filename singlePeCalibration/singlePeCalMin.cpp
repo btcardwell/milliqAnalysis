@@ -78,7 +78,8 @@ outputValues getOutputValues(inputValues b, inputValues t) {
 
     // Calculate uncertainties in output values
     outVal.v_eL   = ( exp(outVal.eL) + 1 - 2*b.a/b.n ) / b.a;
-    outVal.v_ePsi = (outVal.eL * (pow(outVal.ePsi, 2) + outVal.vPsi) + 2*b.v) / (b.n * pow(outVal.eL, 2)) + pow(outVal.ePsi, 2) * (outVal.v_eL) / pow(outVal.eL, 2);
+    outVal.v_ePsi = (outVal.eL * (pow(outVal.ePsi, 2) + outVal.vPsi) + 2*b.v) /
+                    (b.n * pow(outVal.eL, 2)) + pow(outVal.ePsi, 2) * (outVal.v_eL) / pow(outVal.eL, 2);
 
     return outVal;
 }
@@ -191,7 +192,13 @@ void singlePeCalMin() {
                 o.push_back(getOutputValues(b[i], t[j]));
         }
     }
-    makePlots(b, t, o, cut_b[0]);
+    //makePlots(b, t, o, cut_b[0]);
+    
+    // Debugging
+    cout << setw(9) << "E[L}" << "  " <<  setw(9) << "E[Psi]"  << endl;
+    for ( auto a : o) {
+        cout << setw(9) << a.eL << "  " <<  setw(9) << a.ePsi  << endl;
+    }
 }
 
 

@@ -292,12 +292,16 @@ void reflections() {
         spectra.push_back(Spectrum(fileNames[i], significances[i]));
     }
 
+    // Testing
+    for (int i = 0; i < spectra[0].h_adjPeakLocations.size(); i++) { 
+        cout << setw(6) << i*16 << setw(6) << i*11 << setw(6) << spectra[0].h_adjPeakLocations[i] << endl; }
+
     //drawHists(spectra);
     //drawAdjHists(spectra);
     //drawDiffHist(spectra);
     //drawStackedBySigHist(spectra);
     //drawStackedByNpeaksHist(spectra);
-    drawStackedByNpeaksHistSimple(spectra);
+    //drawStackedByNpeaksHistSimple(spectra);
     //fft(spectra);
 }
 
