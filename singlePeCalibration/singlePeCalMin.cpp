@@ -51,7 +51,7 @@ inputValues getInputValues(TString fileName, double pw, string cutString) {
 
     TFile * file = new TFile(fileName, "READ");
     TTree * tree = (TTree*)file->Get("Channel_8");
-    tree->Draw("(-1)*Min>>hist(300, -2, 10)"); 
+    tree->Draw("(-1)*Min>>hist(300, -1, 20)"); 
     TH1D * hist = (TH1D*)gDirectory->Get("hist");
     
     inputValues inVal;
@@ -90,7 +90,7 @@ void makePlots(vector<inputValues> b, vector<inputValues> t, vector<outputValues
     TGraphErrors * eLPlot   = new TGraphErrors();
     TGraphErrors  * ePsiPlot = new TGraphErrors ();
     eLPlot->SetTitle("Average Number of LED-induced Photoelectrons per Trigger");
-    ePsiPlot->SetTitle("Single-photoelectron Response Mean");
+    ePsiPlot->SetTitle("Single-photoelectron Response Mean Amplitude");
 
     eLPlot->SetMarkerColor(4);
     ePsiPlot->SetMarkerColor(4);
@@ -106,14 +106,14 @@ void makePlots(vector<inputValues> b, vector<inputValues> t, vector<outputValues
 	    }
     }
 
-    TCanvas * eL_c = new TCanvas("eL_c", "eL Canvas", 200, 10, 700, 500);
-    eLPlot->GetXaxis()->SetTitle("LED Pulse Width / (ns)");
-    eLPlot->GetYaxis()->SetTitle("Photoelectrons / Trigger");
-    eLPlot->Draw("AP");
+    //TCanvas * eL_c = new TCanvas("eL_c", "eL Canvas", 200, 10, 700, 500);
+    //eLPlot->GetXaxis()->SetTitle("LED Pulse Width / (ns)");
+    //eLPlot->GetYaxis()->SetTitle("Photoelectrons / Trigger");
+    //eLPlot->Draw("AP");
 
     TCanvas * ePsi_c = new TCanvas("ePsi_c", "ePsi Canvas", 200, 10, 700, 500);
     ePsiPlot->GetXaxis()->SetTitle("LED Pulse Width / (ns)");
-    ePsiPlot->GetYaxis()->SetTitle("Mean / (mV)");
+    ePsiPlot->GetYaxis()->SetTitle("Mean Amplitude / (mV)");
     ePsiPlot->GetYaxis()->SetRangeUser(0.3, 1.6);
     ePsiPlot->Draw("AP");
     TF1 * fit = new TF1("fit", "[0]", 0, 10);
@@ -123,17 +123,14 @@ void makePlots(vector<inputValues> b, vector<inputValues> t, vector<outputValues
     TCanvas * spectra_c = new TCanvas("spectra_c", "Spectra Canvas", 200, 10, 700, 500);
     spectra_c->SetLogy();
     for (int i = t.size() - 1; i >= 0; i--) {
-        if (i == 2) {
-            //t[i].h->Sumw2();
-            t[i].h->SetLineColor(4);
-            t[i].h->SetLineWidth(2);
-            t[i].h->Draw("SAME");
-            t[i].h->SetStats(0);
-            t[i].h->SetTitle("PMT Spectra of Pulsed LED w/ Varying Pulse Width");
-            t[i].h->GetXaxis()->SetTitle("Integrated Charge / (pC)");
-            t[i].h->GetYaxis()->SetTitle("Events");
-            t[i].h->GetYaxis()->SetRangeUser(0.5, 20000);
-        }
+        t[i].h->SetLineColor(i+2);
+        t[i].h->SetLineWidth(2);
+        t[i].h->Draw("SAME");
+        t[i].h->SetStats(0);
+        t[i].h->SetTitle("PMT Spectra of Pulsed LED w/ Varying Pulse Width");
+        t[i].h->GetXaxis()->SetTitle("Amplitude / (mV)");
+        t[i].h->GetYaxis()->SetTitle("Events");
+        t[i].h->GetYaxis()->SetRangeUser(0.5, 20000);
     }
     b[0].h->SetLineColor(1);
     b[0].h->SetLineWidth(2);
@@ -156,17 +153,17 @@ void makePlots(vector<inputValues> b, vector<inputValues> t, vector<outputValues
     //leg->AddEntry(t[0].h, "
 
     // Plot background
-    TCanvas * b_c = new TCanvas("b_c", "Background Canvas", 200, 10, 700, 500);
-    b_c->SetLogy();
-    //b[0].h->Sumw2();
-    //b[0].h->Draw();
-    b[0].h->GetYaxis()->SetRangeUser(1.0, 100000.0);
-    b[0].h->SetTitle("Background PMT Spectrum");
-    b[0].h->GetXaxis()->SetTitle("Integrated Charge / (pC)");
-    b[0].h->GetYaxis()->SetTitle("Events");
-    TLine * cutLine_b = new TLine(cut, 0.0, cut, 1000000.0);
-    cutLine_b->SetLineWidth(2);
-    cutLine_b->Draw();
+    //TCanvas * b_c = new TCanvas("b_c", "Background Canvas", 200, 10, 700, 500);
+    //b_c->SetLogy();
+    ////b[0].h->Sumw2();
+    ////b[0].h->Draw();
+    //b[0].h->GetYaxis()->SetRangeUser(1.0, 100000.0);
+    //b[0].h->SetTitle("Background PMT Spectrum");
+    //b[0].h->GetXaxis()->SetTitle("Amplitude / (mV)");
+    //b[0].h->GetYaxis()->SetTitle("Events");
+    //TLine * cutLine_b = new TLine(cut, 0.0, cut, 1000000.0);
+    //cutLine_b->SetLineWidth(2);
+    //cutLine_b->Draw();
 }
 
 void singlePeCalMin() {
@@ -175,29 +172,26 @@ void singlePeCalMin() {
     vector<inputValues> t; // Total runs
     vector<outputValues> o;
     vector<string> cutString(cut_b.size(), "Min > ");
-    
-    // Create strings to perform cuts - I would be able to use to_string if C++11 worked 
-    for (int i = 0; i < cut_b.size(); i++) {
-        ostringstream ss;
-        ss << cut_b[i];
-        cutString[i].append(ss.str());
-    }
-    
+
+    // Create strings to perform cuts 
+    for (int i = 0; i < cut_b.size(); i++) { cutString[i].append(to_string(cut_b[i])); }
+
     // Get input and output values from .root spectra
     for (int i = 0; i < fileNames_b.size(); i++) {
         b.push_back(getInputValues(fileNames_b[i], pulseWidths_b[i], cutString[i]));
-        
+
         for (int j = 0; j < fileNames_t.size(); j++) {
                 t.push_back(getInputValues(fileNames_t[j], pulseWidths_t[j], cutString[i]));
                 o.push_back(getOutputValues(b[i], t[j]));
         }
     }
-    //makePlots(b, t, o, cut_b[0]);
-    
+    makePlots(b, t, o, cut_b[0]);
+
     // Debugging
-    cout << setw(9) << "E[L}" << "  " <<  setw(9) << "E[Psi]"  << endl;
-    for ( auto a : o) {
-        cout << setw(9) << a.eL << "  " <<  setw(9) << a.ePsi  << endl;
+    cout << setw(12) << "a  " << setw(12) << "E[L]  "  <<  setw(12) << "E[Psi]" << setw(12) << "E[T]" << endl;
+    for ( int i = 0; i < t.size(); i++) {
+        cout << setw(12) << (float)t[i].a / t[i].n << setw(12) << o[i].eL << setw(12)
+             << o[i].ePsi << setw(12) << t[i].e << endl;
     }
 }
 
