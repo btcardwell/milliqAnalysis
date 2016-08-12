@@ -8,22 +8,21 @@
 #include <string>
 #include <stdlib.h>
 
+
 const vector<string> fileNames_b = {"spectra/06_28_16_NormalMode_ChargeLength500_Blank.root"};
 
-const vector<string> fileNames_t = {//"spectra/06_28_16_NormalMode_ChargeLength500_6.6ns.root",
+const vector<string> fileNames_t = {
                                     "spectra/06_28_16_NormalMode_ChargeLength500_6.8ns.root",
                                     "spectra/06_28_16_NormalMode_ChargeLength500_7.0ns.root",
-                                    //"spectra/06_28_16_NormalMode_ChargeLength500_7.2ns.root",
                                     "spectra/06_28_16_NormalMode_ChargeLength500_7.4ns.root",
-                                    //"spectra/06_28_16_NormalMode_ChargeLength500_7.6ns.root",
                                     "spectra/06_28_16_NormalMode_ChargeLength500_7.8ns.root",
-                                    //"spectra/06_28_16_NormalMode_ChargeLength500_8.0ns.root",
-                                    "spectra/06_28_16_NormalMode_ChargeLength500_8.2ns.root"};
-
+                                    "spectra/06_28_16_NormalMode_ChargeLength500_8.2ns.root"
+                                   };
 
 const vector<double> pulseWidths_b(fileNames_b.size(), 7.5); // ns
-const vector<double> pulseWidths_t = {/*6.6,*/ 6.8, 7.0, /*7.2,*/ 7.4, /*7.6,*/ 7.8, /*8.0,*/ 8.2}; // ns
-const vector<double> cut_b = {-2.22}; // mV
+const vector<double> pulseWidths_t = {6.8, 7.0, 7.4, 7.8, 8.2}; // ns
+const vector<double> cut_b = {-2.2}; // mV
+
 
 class inputValues {
   public:
@@ -36,6 +35,7 @@ class inputValues {
     TH1D * h;  // Distribution histogram
 };
  
+
 class outputValues {
   public:
     double n0,     // Number of zero-pe triggers 
@@ -47,11 +47,12 @@ class outputValues {
            v_ePsi; // Variance in ePsi
 };
 
+
 inputValues getInputValues(TString fileName, double pw, string cutString) {
 
     TFile * file = new TFile(fileName, "READ");
     TTree * tree = (TTree*)file->Get("Channel_8");
-    tree->Draw("(-1)*Min>>hist(300, -1, 20)"); 
+    tree->Draw("(-1)*Min>>hist(200, -1, 20)"); 
     TH1D * hist = (TH1D*)gDirectory->Get("hist");
     
     inputValues inVal;
@@ -65,6 +66,7 @@ inputValues getInputValues(TString fileName, double pw, string cutString) {
     
     return inVal;
 }
+
 
 outputValues getOutputValues(inputValues b, inputValues t) {
 
@@ -83,6 +85,7 @@ outputValues getOutputValues(inputValues b, inputValues t) {
 
     return outVal;
 }
+
 
 void makePlots(vector<inputValues> b, vector<inputValues> t, vector<outputValues> o, double cut) {
 
@@ -106,10 +109,10 @@ void makePlots(vector<inputValues> b, vector<inputValues> t, vector<outputValues
 	    }
     }
 
-    //TCanvas * eL_c = new TCanvas("eL_c", "eL Canvas", 200, 10, 700, 500);
-    //eLPlot->GetXaxis()->SetTitle("LED Pulse Width / (ns)");
-    //eLPlot->GetYaxis()->SetTitle("Photoelectrons / Trigger");
-    //eLPlot->Draw("AP");
+    TCanvas * eL_c = new TCanvas("eL_c", "eL Canvas", 200, 10, 700, 500);
+    eLPlot->GetXaxis()->SetTitle("LED Pulse Width / (ns)");
+    eLPlot->GetYaxis()->SetTitle("Photoelectrons / Trigger");
+    eLPlot->Draw("AP");
 
     TCanvas * ePsi_c = new TCanvas("ePsi_c", "ePsi Canvas", 200, 10, 700, 500);
     ePsiPlot->GetXaxis()->SetTitle("LED Pulse Width / (ns)");
@@ -123,14 +126,16 @@ void makePlots(vector<inputValues> b, vector<inputValues> t, vector<outputValues
     TCanvas * spectra_c = new TCanvas("spectra_c", "Spectra Canvas", 200, 10, 700, 500);
     spectra_c->SetLogy();
     for (int i = t.size() - 1; i >= 0; i--) {
-        t[i].h->SetLineColor(i+2);
-        t[i].h->SetLineWidth(2);
-        t[i].h->Draw("SAME");
-        t[i].h->SetStats(0);
-        t[i].h->SetTitle("PMT Spectra of Pulsed LED w/ Varying Pulse Width");
-        t[i].h->GetXaxis()->SetTitle("Amplitude / (mV)");
-        t[i].h->GetYaxis()->SetTitle("Events");
-        t[i].h->GetYaxis()->SetRangeUser(0.5, 20000);
+        if (i == 2) {
+            t[i].h->SetLineColor(i+2);
+            t[i].h->SetLineWidth(2);
+            t[i].h->Draw("SAME");
+            t[i].h->SetStats(0);
+            t[i].h->SetTitle("PMT Spectra of Pulsed LED w/ Varying Pulse Width");
+            t[i].h->GetXaxis()->SetTitle("Amplitude / (mV)");
+            t[i].h->GetYaxis()->SetTitle("Events");
+            t[i].h->GetYaxis()->SetRangeUser(0.5, 20000);
+        }
     }
     b[0].h->SetLineColor(1);
     b[0].h->SetLineWidth(2);
@@ -141,7 +146,7 @@ void makePlots(vector<inputValues> b, vector<inputValues> t, vector<outputValues
     cutLine_t->SetLineColor(1);
     cutLine_t->SetLineStyle(2);
     cutLine_t->Draw();
-    TLine * meanLine_t = new TLine(0.86, 0.0, 0.86, 20000.0);
+    TLine * meanLine_t = new TLine(b[0].e + 0.89, 0.0, b[0].e + 0.89, 20000.0);
     meanLine_t->SetLineWidth(2);
     meanLine_t->SetLineColor(2);
     meanLine_t->SetLineStyle(2);
@@ -166,10 +171,11 @@ void makePlots(vector<inputValues> b, vector<inputValues> t, vector<outputValues
     //cutLine_b->Draw();
 }
 
+
 void singlePeCalMin() {
 
-    vector<inputValues> b; // Blank runs
-    vector<inputValues> t; // Total runs
+    vector<inputValues>  b; // Blank runs
+    vector<inputValues>  t; // Total runs
     vector<outputValues> o;
     vector<string> cutString(cut_b.size(), "Min > ");
 
@@ -181,21 +187,21 @@ void singlePeCalMin() {
         b.push_back(getInputValues(fileNames_b[i], pulseWidths_b[i], cutString[i]));
 
         for (int j = 0; j < fileNames_t.size(); j++) {
-                t.push_back(getInputValues(fileNames_t[j], pulseWidths_t[j], cutString[i]));
-                o.push_back(getOutputValues(b[i], t[j]));
+            t.push_back(getInputValues(fileNames_t[j], pulseWidths_t[j], cutString[i]));
+            o.push_back(getOutputValues(b[i], t[j]));
         }
     }
     makePlots(b, t, o, cut_b[0]);
 
     // Debugging
-    cout << setw(12) << "a  " << setw(12) << "E[L]  "  <<  setw(12) << "E[Psi]" << setw(12) << "E[T]" << endl;
+    cout << "BG E[T}: " << b[0].e << "  BG a/n: " << b[0].a / b[0].n << endl;
+    cout << setw(12) << "a/n  " << setw(12) << "E[L]  " << setw(12) 
+         << "E[Psi]" << setw(12) << "E[T]" << endl;
     for ( int i = 0; i < t.size(); i++) {
         cout << setw(12) << (float)t[i].a / t[i].n << setw(12) << o[i].eL << setw(12)
              << o[i].ePsi << setw(12) << t[i].e << endl;
     }
 }
-
-
 
 
 
