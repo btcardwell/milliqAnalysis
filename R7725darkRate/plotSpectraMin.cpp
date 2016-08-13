@@ -2,21 +2,22 @@
 
 
 const vector<string> fileNames = {
-                                  "spectra/1700V_Blank.root",
-                                  "spectra/1700V_07.2ns.root",
-                                  "spectra/1700V_08.6ns.root"
-                                 }; 
+                                  //"spectra/08_12_16_1500V_LightsOff_Short.root",
+                                  "spectra/08_12_16_1600V_LightsOff_Short.root",
+                                  "spectra/08_12_16_1700V_LightsOff_Short.root",
+                                  "spectra/08_12_16_1800V_LightsOff_Short.root"
+                                 };
 
-const vector<string> leg_entries = { "1300V", "1500V", "1700V" };
+const vector<string> leg_entries = {"1600V", "1700", "1800V"};
 
 TH1F* getHist(string fileName) {
 
-  TFile * file = TFile::Open((TString)fileName);
-  TTree * tree = (TTree*)file->Get("Channel_1");
+    TFile * file = TFile::Open((TString)fileName);
+    TTree * tree = (TTree*)file->Get("Channel_1");
 
-  tree->Draw("Min*(-1)>>h(200, 0, 200)");
-  
-  return (TH1F*)gDirectory->Get("h");
+    tree->Draw("Min*(-1)>>h(200, 0, 300)");
+    
+    return (TH1F*)gDirectory->Get("h");
 }
 
 void plotSpectraMin() {
@@ -33,17 +34,16 @@ void plotSpectraMin() {
     for(int i =0; i < hists.size(); i++) {
         hists[i]->SetLineColor(i+1);
         hists[i]->SetLineWidth(2);
+        //hists[i]->Sumw2();
         hists[i]->Draw("SAME"); 
         leg->AddEntry(hists[i], (TString)leg_entries[i]);
-        leg->Draw();
     }
 
     hists[hists.size()-1]->SetLineColor(hists.size()+1);
-    hists[hists.size()-1]->SetTitle(
-            "PMT Spectra from 7.2ns LED Pulse with Varying PMT Supply Voltage");
+    hists[hists.size()-1]->SetTitle("PMT Amplitude Spectra");
     hists[hists.size()-1]->GetXaxis()->SetTitle("Maximum Amplitude / (mV)");
     hists[hists.size()-1]->GetYaxis()->SetTitle("Events");
-    hists[hists.size()-1]->GetYaxis()->SetRangeUser(0.5, 100000);
+    //hists[hists.size()-1]->GetYaxis()->SetRangeUser(0.5, 20000);
     gStyle->SetOptStat(0);
     leg->Draw();
 
