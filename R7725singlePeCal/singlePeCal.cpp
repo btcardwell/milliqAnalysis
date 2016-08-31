@@ -8,22 +8,17 @@
 #include <string>
 #include <stdlib.h>
 
-const vector<string> fileNames_b = {"spectra/1300V_Blank.root"};
+const vector<string> fileNames_b = {"spectra/08_12_16_1700V_Blank.root"};
 
 const vector<string> fileNames_t = {
-                                    "spectra/1300V_06.8ns.root",
-                                    "spectra/1300V_07.0ns.root",
-                                    "spectra/1300V_07.2ns.root",
-                                    "spectra/1300V_07.4ns.root",
-                                    "spectra/1300V_07.6ns.root",
-                                    "spectra/1300V_07.8ns.root",
-                                    "spectra/1300V_08.0ns.root",
-                                    "spectra/1300V_08.2ns.root"
+                                    "spectra/08_12_16_1700V_07.0ns.root",
+                                    "spectra/08_12_16_1700V_07.4ns.root",
+                                    "spectra/08_12_16_1700V_07.8ns.root",
                                    };
 
 
 const vector<double> pulseWidths_b(fileNames_b.size(), 7.5); // ns
-const vector<double> pulseWidths_t = {6.8, 7.0, 7.2, 7.4, 7.6, 7.8, 8.0, 8.2}; // ns
+const vector<double> pulseWidths_t = {7.0, 7.4, 7.8}; // ns
 const vector<double> cut_b = {0.48}; // pC
 
 class inputValues {
@@ -52,7 +47,7 @@ inputValues getInputValues(TString fileName, double pw, string cutString) {
 
     TFile * file = new TFile(fileName, "READ");
     TTree * tree = (TTree*)file->Get("Channel_1");
-    tree->Draw("(-1)*Charge>>hist(300, -2, 100)"); 
+    tree->Draw("(-1)*Charge>>hist(300, -2, 300)"); 
     TH1D * hist = (TH1D*)gDirectory->Get("hist");
     
     inputValues inVal;

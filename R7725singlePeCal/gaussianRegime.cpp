@@ -6,12 +6,11 @@
 #include <vector>
 #include <stdlib.h>
 
-const vector<string> fileNames = {"spectra/09.5ns.root",
-                                  "spectra/10.0ns.root",
-                                  "spectra/10.5ns.root",
-                                  "spectra/11.0ns.root"};
+const vector<string> fileNames = {
+                                  "spectra/08_12_16_1800V_09.0ns.root",
+                                 };
  
-const vector<double> pulseWidths = {9.5, 10.0, 10.5, 11.0}; 
+const vector<double> pulseWidths = {9.0}; 
 
 
 class inputValues {
@@ -69,6 +68,7 @@ void gaussianRegime() {
     
     for (int i = 0; i < t.size(); i++) {
         qPerPEPlot->SetPoint(i, t[i].pw, t[i].v / t[i].e);
+        cout << t[i].v / t[i].e << endl;
     }
     
     TCanvas * qPerPECanvas = new TCanvas("qPerPE", "qPerPE Canvas", 200, 10, 700, 500);
