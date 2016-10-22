@@ -64,21 +64,19 @@ void calculateDarkRate(TTree * tree,
                        float threshold,
                        unsigned int eventStart, unsigned int nEvents,
                        double &rate, double &rateError, double &meanTime, double &meanTimeError,
-                       int &nTDCRollovers) {
+                       int &nTDCRollovers, float &meanTemp) {
 
   double totalLiveTime = liveTimePerEvent * nEvents;
 
   float amplitude;
+  float temp = 0;
   ULong64_t tdc;
   tree->SetBranchAddress("min_2", &amplitude);
   tree->SetBranchAddress("TDC_2", &tdc);
+  tree->SetBranchAddress("temperature", &temp);
 
   tree->GetEntry(0);
   ULong64_t initialTDC = tdc;
-
-  if(eventStart == 0) {
-    cout << endl << "initial TDC counter = " << initialTDC << " (" << initialTDC / 200.e6 / 60.0 << ") minutes" << endl << endl;
-  }
 
   tree->GetEntry(eventStart);
   ULong64_t startTDC = tdc + nTDCRollovers*TMath::Power(2.0, 40.0);
@@ -103,22 +101,19 @@ void calculateDarkRate(TTree * tree,
 
   for(unsigned int i = eventStart; i < eventStart + nEvents; i++) {
     tree->GetEntry(i);
-    if(-1. * amplitude > threshold) rate++;
+    //if(-1. * amplitude > threshold) rate++;
+    meanTemp += temp;
   }
-
-  cout << "rate = " << rate << " / " << totalLiveTime << endl;
 
   rateError = TMath::Sqrt(rate) / totalLiveTime;
   rate /= totalLiveTime;
 
-  cout << "At time " << meanTime << " +/- " << meanTimeError << ", rate = "<< rate << " +/- " << rateError << " Hz" << endl;
+  meanTemp /= nEvents;
 
   tree->ResetBranchAddresses();
 
   return;
 }
-
-
 
 void darkRateVersusTime() {
 
@@ -154,7 +149,7 @@ void darkRateVersusTime() {
   // Dark rate versus time
   ///////////////////////////
 
-  const int nDivisions = 20;
+  const int nDivisions = 150;
 
   double rates[nDivisions][trees.size()];
   double rateErrors[nDivisions][trees.size()];
@@ -162,30 +157,52 @@ void darkRateVersusTime() {
   double tdcErrors[nDivisions][trees.size()];
   int nTDCRollovers = 0;
   unsigned int nEvents[trees.size()];
+  float temps;
+  float meanTemps[nDivisions][trees.size()];
 
   for(int j = 0; j < trees.size(); j++) {
     nEvents[j] = trees[j]->GetEntries() / nDivisions;
+    cout << trees[j]->GetEntries() << " " << nEvents[j] << endl;
    
     for(int i = 0; i < nDivisions; i++) {
-      calculateDarkRate(trees[j], 5.0, i*nEvents[j], nEvents[j], rates[i][j], 
-                        rateErrors[i][j], tdcs[i][j], tdcErrors[i][j], nTDCRollovers);
+      calculateDarkRate(trees[j], 5.0, i*nEvents[j], nEvents[j], rates[i][j], rateErrors[i][j],
+                        tdcs[i][j], tdcErrors[i][j], nTDCRollovers, meanTemps[i][j]);
     }
   }
 
-  //TCanvas * canVersusTime = new TCanvas("versusTime", "Dark rate versus time", 10, 10, 800, 600);
+  TH1D * h_rates = new TH1D("ratesVersusTime", "rates;Dark rate in 6s sub-run [Hz];Sub-Runs", 50, 10000, 50000);
+  TH2D * h_ratesVsEventNum = new TH2D("ratesVersusEventNum", "ratesVersusEventNum", nDivisions/2, 0, trees[0]->GetEntries(), 25, 10000, 50000);
+  TH1D * h_temps = new TH1D("ratesVersusTemp", "ratesVersusTemp", 30, 0, 29); 
+  TH2D * h_ratesVsTemp = new TH2D("ratesVersusTemp", "ratesVersusTemp", 2,
+                                       21, 23, 25, 10000, 50000);
+  TH2D * h_tempVsEventNum = new TH2D("TempVersusEventNum", "TempVersusEventNum", nDivisions/2,
+                                       0, trees[0]->GetEntries(), 30, 0, 29);
 
-  //TGraphErrors * gr = new TGraphErrors(nDivisions, tdcs, rates, tdcErrors, rateErrors);
-  //gr->GetXaxis()->SetTitle("Time in run [minutes]");
-  //gr->GetYaxis()->SetTitle("Event rate above 5 mV [Hz]");
-  //gr->Draw("ALP");
-
-  TH1D * hist_ratesVersusTime = new TH1D("ratesVersusTime", "ratesVersusTime;Dark rate in 45s sub-run [Hz];Sub-Runs", 50, 10000, 50000);
-  for(int j = 0; j < trees.size(); j++) {
-    for(int i = 0; i < nDivisions; i++) {
-      hist_ratesVersusTime->Fill(rates[i][j]);
+  for (int j = 0; j < trees.size(); j++) {
+    trees[j]->SetBranchAddress("temperature", &temps);
+    for (int i = 0; i < nDivisions; i++) {
+      if (nEvents[j] < 1360000) {
+        //h_rates->Fill(rates[i][j]);
+        h_temps->Fill(meanTemps[i][j]);
+        //h_ratesVsEventNum->Fill(i*nEvents[j], rates[i][j]);
+        //h_ratesVsTemp->Fill(meanTemps[i][j], rates[i][j]);
+        h_tempVsEventNum->Fill(i*nEvents[j], meanTemps[i][j]);
+      }
     }
   }
 
-  TCanvas * canHist = new TCanvas("canHist", "Rates in sub-runs", 10, 10, 800, 600);
-  hist_ratesVersusTime->Draw();
+  TCanvas * c_rates = new TCanvas("c_rates", "Rates in sub-runs", 10, 10, 800, 600);
+  h_rates->Draw();
+
+  TCanvas * c_ratesVsEventNum = new TCanvas("c_ratesVsEventNum", "Rates Vs Event Number", 10, 10, 800, 600);
+  h_ratesVsEventNum->Draw("COLZ");
+
+  TCanvas * c_temps = new TCanvas("c_temps", "Temps in all events", 10, 10, 800, 600);
+  h_temps->Draw();
+
+  TCanvas * c_ratesVsTemp = new TCanvas("c_ratesVsTemp", "Rates Vs Temp", 10, 10, 800, 600);
+  h_ratesVsTemp->Draw("COLZ");
+
+  TCanvas * c_tempVsEventNum = new TCanvas("c_TempVsEventNum", "Temp Vs Event Number", 10, 10, 800, 600);
+  h_tempVsEventNum->Draw("COLZ");
 }
